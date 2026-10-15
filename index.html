@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nodi, mempool e transazioni · BitPolito</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}</script>
+</head>
+<body>
+<div id="app">
+<header><div class="wrap hd">
+  <a class="brand" href="https://www.bitpolito.it" target="_blank" rel="noopener">
+    <img class="lt" src="assets/cow-icon-blue.svg" alt=""><img class="dk" src="assets/cow-icon-white.svg" alt="">
+    <span>Come funziona Bitcoin</span></a>
+  <button id="theme" role="switch" aria-label="Tema chiaro/scuro"><span class="knob"><i class="ic i-sun"></i><i class="ic i-moon"></i></span></button>
+</div></header>
+<main class="wrap">
+  <div class="steps" id="steps"></div>
+  <section class="surf hero"><div class="kicker" id="k"></div><h1 id="t"></h1><p id="d"></p></section>
+  <section class="surf netcard"><svg id="net" viewBox="0 0 800 340" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Rete Bitcoin: il tuo wallet SPV, cinque full node e un miner"></svg><div id="panel" role="status" aria-live="polite"></div></section>
+  <div class="lower">
+    <div class="surf box" id="bt"><small>Mempool (ordinata per fee)</small><div id="tray"></div></div>
+    <div class="surf box" id="bc"><small>Timechain</small><div id="chain"></div></div>
+  </div>
+</main>
+<nav class="fn">
+  <button class="btn o" id="prev" onclick="go(S.step-1)">← Indietro</button>
+  <button class="btn s" id="go" onclick="act()"></button>
+  <button class="btn o" id="next" onclick="go(S.step+1)">Avanti →</button>
+</nav>
+<footer><img class="lt" src="assets/cow-bull-blue.svg" alt=""><img class="dk" src="assets/cow-bull-white.svg" alt=""><span>Fatto con</span><i class="ic i-heart"></i><span>da BitPolito · © 2026</span></footer>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
