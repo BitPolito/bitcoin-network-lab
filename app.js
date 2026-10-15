@@ -7,14 +7,23 @@ const S={tx:[],chain:[{i:0,h:h('g')}],step:-1,busy:false,n:0};
 const nb=a=>E.filter(e=>e.includes(a)).map(e=>e[0]===a?e[1]:e[0]).filter(k=>!N[k].off);
 const net=$('net');
 function mk(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||net).appendChild(e);return e}
-E.forEach(([a,b])=>mk('line',{x1:N[a].x,y1:N[a].y,x2:N[b].x,y2:N[b].y}));
+const WD={};for(const k in N)WD[k]=[N[k].x,N[k].y];
+const LN=E.map(([a,b])=>({a,b,e:mk('line',{})}));
 for(const k in N){const n=N[k];n.has=new Set();
- const og=mk('g',{transform:`translate(${n.x-24} ${n.y-24})`});n.g=mk('g',{class:'nd '+n.t},og);
+ const og=mk('g',{});n.og=og;n.g=mk('g',{class:'nd '+n.t},og);
  mk('rect',{width:48,height:48,rx:8},n.g);
  if(n.t==='full'){[[12,12],[30,12],[18,24],[12,33],[30,33]].forEach(([x,y])=>mk('rect',{class:'px',x,y,width:6,height:6,rx:0,style:'stroke:none;fill:var(--bg)'},n.g))}
  else mk('text',{x:24,y:31,style:'font-size:18px;fill:var(--mu)'},n.g).textContent='₿';
- mk('text',{x:24,y:68},n.g).textContent=n.l||k.replace('F','Full ');
- n.bd=mk('text',{x:24,y:-6,class:'bd'},n.g);n.ch=mk('text',{x:24,y:-22,class:'bd ch'},n.g);n.h=0}
+ const lb=mk('text',{x:24,y:68},n.g);lb.textContent=n.l||k.replace('F','Full ');
+ n.bd=mk('text',{x:24,y:-6,class:'bd'},n.g);n.ch=mk('text',{x:24,y:-22,class:'bd ch'},n.g);n.h=0;n.tx=[lb,n.bd,n.ch]}
+// Due disposizioni della rete: orizzontale (desktop/tablet) e compatta a 5 colonne (telefono in verticale).
+// Ai bordi (wallet e miner) le scritte si allineano al nodo, così non escono dal riquadro.
+const CP={W:[30,160],F1:[100,60],F2:[100,260],F3:[170,160],F4:[240,60],F5:[240,260],M:[310,160]},MQ=matchMedia('(max-width:640px)');
+function layout(){const c=MQ.matches,P=c?CP:WD;net.setAttribute('viewBox',c?'0 0 340 320':'0 0 800 340');
+ for(const k in N){const n=N[k];[n.x,n.y]=P[k];n.og.setAttribute('transform',`translate(${n.x-24} ${n.y-24})`);
+  const a=c&&k==='W'?['start',0]:c&&k==='M'?['end',48]:['middle',24];for(const t of n.tx){t.style.textAnchor=a[0];t.setAttribute('x',a[1])}}
+ for(const l of LN){const a=N[l.a],b=N[l.b];l.e.setAttribute('x1',a.x);l.e.setAttribute('y1',a.y);l.e.setAttribute('x2',b.x);l.e.setAttribute('y2',b.y)}}
+MQ.addEventListener('change',layout);layout();
 function badges(){for(const k in N){const n=N[k];
  if(n.off){n.bd.textContent='offline';n.ch.textContent='';continue}
  if(n.t==='full'){const c=S.tx.filter(t=>n.has.has(t.id)).length;n.bd.textContent=c?c+' in mempool':''}else n.bd.textContent='';
@@ -35,9 +44,9 @@ function addTx(mine,fee,inst,from){let id;do{id=h('t'+(++S.n)+Math.random()).sli
 const cards={};
 function renderTray(){const p=S.tx.filter(t=>!t.blk).sort((a,b)=>b.fee-a.fee),tr=$('tray');
  for(const id in cards)if(!p.find(t=>t.id===id)){const c=cards[id];c.style.top='-50px';c.style.opacity=0;c.style.transform='scale(.4)';setTimeout(()=>c.remove(),800);delete cards[id]}
- p.forEach((t,i)=>{let c=cards[t.id];if(!c){c=cards[t.id]=document.createElement('div');c.className='card'+(t.mine?' me':'');c.innerHTML=`<b>${t.id}</b><small>fee ${t.fee.toFixed(2)}</small>`;c.style.left=i*76+'px';c.style.top='-40px';c.style.opacity=0;tr.appendChild(c);c.getBoundingClientRect()}
-  c.style.left=i*76+'px';c.style.top='0';c.style.opacity=1})}
-function renderChain(){$('chain').innerHTML=S.chain.map((b,i)=>`<div class="blk${b.me?' me':''}" id="b${b.i}" ${i<S.chain.length-1?'style="animation:none"':''}><b>#${b.i}</b><small>${b.h.slice(0,6)}</small><small>${b.i?b.ids.length+' tx':'genesi'}</small></div>`).join('')}
+ p.forEach((t,i)=>{let c=cards[t.id];if(!c){c=cards[t.id]=document.createElement('div');c.className='card'+(t.mine?' me':'');c.innerHTML=`<b>${t.id}</b><small>fee ${t.fee.toFixed(2)}</small>`;c.style.left=i*76+3+'px';c.style.top='-40px';c.style.opacity=0;tr.appendChild(c);c.getBoundingClientRect()}
+  c.style.left=i*76+3+'px';c.style.top='3px';c.style.opacity=1})}
+function renderChain(){const c=$('chain');c.innerHTML=S.chain.map((b,i)=>`<div class="blk${b.me?' me':''}" id="b${b.i}" ${i<S.chain.length-1?'style="animation:none"':''}><b>#${b.i}</b><small>${b.h.slice(0,6)}</small><small>${b.i?b.ids.length+' tx':'genesi'}</small></div>`).join('');c.scrollLeft=c.scrollWidth}
 async function mineBlock(anim){
  let p=S.tx.filter(t=>!t.blk);while(p.length<3){addTx(false,+(Math.random()*.4+.01).toFixed(2),true);p=S.tx.filter(t=>!t.blk)}
  const top=p.sort((a,b)=>b.fee-a.fee).slice(0,3),prev=S.chain[S.chain.length-1];
@@ -81,10 +90,14 @@ const STEPS=[
   say('✓ Si è risincronizzato dai vicini: nessuno è indispensabile','g')}}];
 const LB=['Nodi','Transazione','Mempool','Blocco','SPV','Double spend','Regole','Resilienza'];
 $('steps').innerHTML=STEPS.map((_,i)=>`<button class="sb" aria-label="${i+1}. ${LB[i]}" onclick="go(${i})"><span class="num">${i+1}</span><span class="lbl">${LB[i]}</span></button>`).join('');
+// Scorrimento (solo layout a scorrimento: telefoni / schermi bassi)
+const FL=matchMedia('(max-width:640px),(max-height:640px)'),RM=matchMedia('(prefers-reduced-motion:reduce)'),bhv=()=>RM.matches?'auto':'smooth';
+function reveal(){if(!FL.matches)return;const id=[1,2].includes(S.step)?'bt':[3,4,7].includes(S.step)?'bc':null;if(id)$(id).scrollIntoView({behavior:bhv(),block:'nearest'})}
 async function act(){if(S.busy)return;S.busy=true;$('go').disabled=true;$('panel').innerHTML='';
- try{await STEPS[S.step].f()}finally{S.busy=false;$('go').disabled=false}}
+ try{await STEPS[S.step].f();reveal()}finally{S.busy=false;$('go').disabled=false}}
 async function go(i){if(S.busy)return;
  if(i<0||i>=STEPS.length)return;
+ if(scrollY>0)scrollTo({top:0,behavior:bhv()});
  const t=$('t'),d=$('d');t.classList.add('sw');d.style.opacity=0;await sl(250);
  S.step=i;$('panel').innerHTML='';t.textContent=STEPS[i].t;d.textContent=STEPS[i].d;$('go').textContent=STEPS[i].b;
  t.classList.remove('sw');d.style.opacity=1;
@@ -93,7 +106,13 @@ async function go(i){if(S.busy)return;
 addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey)return;
  if(e.key==='ArrowRight'||e.key==='PageDown')go(S.step+1);if(e.key==='ArrowLeft'||e.key==='PageUp')go(S.step-1);
  if((e.key===' '||e.key==='Enter')&&!e.target.closest('#theme,.sb,a')){e.preventDefault();act()}});
+// Swipe sinistra/destra per cambiare passo (ignorato su mempool/timechain, che scorrono in orizzontale, e con lo zoom attivo)
+let sw0=null;
+addEventListener('touchstart',e=>{const t=e.touches[0];sw0=e.touches.length===1&&!e.target.closest('#tray,#chain,#theme')&&(visualViewport?visualViewport.scale:1)<1.01?[t.clientX,t.clientY]:null},{passive:true});
+addEventListener('touchend',e=>{if(!sw0)return;const t=e.changedTouches[0],dx=t.clientX-sw0[0],dy=t.clientY-sw0[1];sw0=null;
+ if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*2)go(S.step+(dx<0?1:-1))},{passive:true});
 renderChain();
+const tc=d=>{const m=document.querySelector('meta[name=theme-color]');if(m)m.content=d?'#001ce0':'#f9f9f9'};tc(document.documentElement.classList.contains('dark'));
 $('theme').setAttribute('aria-checked',document.documentElement.classList.contains('dark'));
-$('theme').onclick=()=>{const d=document.documentElement.classList.toggle('dark');$('theme').setAttribute('aria-checked',d);try{localStorage.setItem('theme',d?'dark':'light')}catch(e){}};
+$('theme').onclick=()=>{const d=document.documentElement.classList.toggle('dark');$('theme').setAttribute('aria-checked',d);tc(d);try{localStorage.setItem('theme',d?'dark':'light')}catch(e){}};
 go(0);

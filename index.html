@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f9f9f9">
 <title>Nodi, mempool e transazioni · BitPolito</title>
 <link rel="icon" href="assets/favicon.ico" sizes="any">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,9 +30,9 @@
   </div>
 </main>
 <nav class="fn">
-  <button class="btn o" id="prev" onclick="go(S.step-1)">← Indietro</button>
+  <button class="btn o" id="prev" aria-label="Passo precedente" onclick="go(S.step-1)"><span aria-hidden="true">←</span><span class="tx">Indietro</span></button>
   <button class="btn s" id="go" onclick="act()"></button>
-  <button class="btn o" id="next" onclick="go(S.step+1)">Avanti →</button>
+  <button class="btn o" id="next" aria-label="Passo successivo" onclick="go(S.step+1)"><span class="tx">Avanti</span><span aria-hidden="true">→</span></button>
 </nav>
 <footer><img class="lt" src="assets/cow-bull-blue.svg" alt=""><img class="dk" src="assets/cow-bull-white.svg" alt=""><span>Fatto con</span><i class="ic i-heart"></i><span>da BitPolito · © 2026</span></footer>
 </div>
