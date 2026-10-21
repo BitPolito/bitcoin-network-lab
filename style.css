@@ -102,7 +102,8 @@ footer img{height:22px;width:auto}
  main{flex:1 0 auto}
  .hero{min-height:0}
  .netcard{display:block;flex:none;min-height:0}
- svg#net{display:block;width:100%;height:auto;max-height:70vh;margin:0 auto}
+ svg#net,svg#mk{display:block;width:100%;height:auto;max-height:70vh;margin:0 auto}
+ .netcard.tree svg#net{display:none}
  .lower{height:auto}
  .box{height:116px;scroll-margin-bottom:96px}
  .blk{scroll-margin-bottom:96px}
@@ -125,7 +126,7 @@ footer img{height:22px;width:auto}
  h1{font-size:1.4rem}
  #d{margin-top:4px}
  .netcard{padding:6px 4px 8px}
- svg#net{max-width:460px}
+ svg#net,svg#mk{max-width:460px}
  #panel{gap:6px;padding:6px 4px 0;min-height:0}
  .chip{border-radius:14px;padding:5px 12px;line-height:1.3;text-align:center;max-width:100%}
  /* mempool e timechain impilate; il riquadro non ancora mostrato non occupa spazio */
@@ -138,4 +139,33 @@ footer img{height:22px;width:auto}
  .btn.o{flex:none;width:52px;padding:0}
  .btn .tx{display:none}
  footer{padding:8px 0;flex-wrap:wrap;font-size:12px}
+}
+
+/* Albero di Merkle (passo 5) */
+svg#mk{display:none;flex:1;min-height:0;width:100%}
+.netcard.tree svg#net{display:none}.netcard.tree svg#mk{display:block}
+#mk line{stroke-opacity:.2;stroke-width:2;transition:stroke-opacity .5s,stroke-width .5s}
+#mk line.hl{stroke-opacity:1;stroke-width:3}
+.mn{transition:opacity .5s}.mn.dim{opacity:.2}
+.mn rect{fill:var(--surf);stroke:var(--fg);stroke-width:2;transition:fill .4s,stroke .4s}
+.mn text{text-anchor:middle;fill:var(--fg);font-family:inherit;transition:fill .4s}
+.mn .l{font-size:11px;font-weight:600;opacity:.75}
+.mn .v{font-size:14px;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.mn.dup rect{stroke-dasharray:5 4}
+.mn.me rect,#mk .lg.me{fill:var(--ab);stroke:var(--amb);stroke-width:4}
+.mn.me text{fill:var(--at)}
+.mn.sib rect,.mn.ok rect,#mk .lg.sib{fill:var(--fg)}
+.mn.sib text,.mn.ok text{fill:var(--bg)}
+.mn.cmp rect,#mk .lg.cmp{fill:var(--soft);stroke:var(--fg);stroke-width:3}
+#mk .lg{stroke-width:2}
+#mk .lg.me{stroke-width:3}
+#mk .lg:not(.me):not(.cmp){stroke:var(--fg)}
+#mk .cp{font-size:15px;font-weight:700;fill:var(--fg);text-anchor:middle}
+#mk .lt2{font-size:11px;font-weight:600;fill:var(--mu)}
+/* Desktop: durante la prova di Merkle l'albero occupa tutta l'altezza e i messaggi vanno a destra */
+@media(min-width:641px) and (min-height:641px){
+ .netcard.tree{flex-direction:row;align-items:center;gap:16px}
+ .netcard.tree svg#mk{flex:1 1 60%;height:100%}
+ .netcard.tree #panel{flex:0 0 36%;flex-direction:column;align-items:stretch;justify-content:center}
+ .netcard.tree .chip{text-align:center;border-radius:12px}
 }

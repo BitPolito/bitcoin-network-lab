@@ -1,6 +1,7 @@
 const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg';
 const sl=ms=>new Promise(r=>setTimeout(r,ms));
 const h=s=>{let x=5381;for(const c of s)x=((x<<5)+x+c.charCodeAt(0))>>>0;return x.toString(16).padStart(8,'0')};
+const merkle=ids=>{const lf=ids.map(i=>h(i));while(lf.length<4)lf.push(lf[lf.length-1]);const l1=[h(lf[0]+lf[1]),h(lf[2]+lf[3])];return{leaves:lf,l1,root:h(l1[0]+l1[1])}};
 const N={W:{x:70,y:170,t:'spv',l:'Il tuo wallet'},F1:{x:210,y:60,t:'full'},F2:{x:210,y:280,t:'full'},F3:{x:400,y:170,t:'full'},F4:{x:590,y:60,t:'full'},F5:{x:590,y:280,t:'full'},M:{x:730,y:170,t:'full',l:'Miner'}};
 const E=[['W','F1'],['W','F2'],['F1','F2'],['F1','F3'],['F2','F3'],['F3','F4'],['F3','F5'],['F4','F5'],['F4','M'],['F5','M']];
 const S={tx:[],chain:[{i:0,h:h('g')}],step:-1,busy:false,n:0};
@@ -50,13 +51,39 @@ function renderChain(){const c=$('chain');c.innerHTML=S.chain.map((b,i)=>`<div c
 async function mineBlock(anim){
  let p=S.tx.filter(t=>!t.blk);while(p.length<3){addTx(false,+(Math.random()*.4+.01).toFixed(2),true);p=S.tx.filter(t=>!t.blk)}
  const top=p.sort((a,b)=>b.fee-a.fee).slice(0,3),prev=S.chain[S.chain.length-1];
- const b={i:S.chain.length,ids:top.map(t=>t.id),root:h(top.map(t=>t.id).join('+')),me:top.some(t=>t.mine)};b.h='0000'+h(prev.h+b.root);
+ const ids=top.map(t=>t.id),m=merkle(ids),b={i:S.chain.length,ids,m,root:m.root,me:top.some(t=>t.mine)};b.h='0000'+h(prev.h+b.root);
  if(anim){top.forEach(t=>cards[t.id].style.borderColor='var(--gr)');await sl(700)}
  top.forEach(t=>t.blk=b.i);S.chain.push(b);N.M.h=b.i;renderTray();renderChain();
  if(anim){await sl(500);N.M.has=new Set([...N.M.has].filter(i=>!b.ids.includes(i)));await gossip('M',b.h,'blk',b.ids);N.W.h=b.i}
  else for(const k in N){b.ids.forEach(i=>N[k].has.delete(i));if(!N[k].off)N[k].h=b.i}
  badges();return b}
 function say(h,cls){const c=document.createElement('span');c.className='chip '+(cls||'');c.textContent=h;$('panel').appendChild(c)}
+const MK=$('mk'),card=document.querySelector('.netcard'),setTree=on=>card.classList.toggle('tree',on);
+// Albero di Merkle del blocco: foglie = hash delle tx (la 4ª è la copia dell'ultima, perché sono 3), poi si sale fino alla radice.
+function drawTree(b,ix){MK.innerHTML='';const m=b.m,LX=[58,170,282,394],L1=[114,338],Y=[84,164,244],W=100,H=46,N2={},E2={};
+ const ed=(k,px,py,cx,cy)=>E2[k]=mk('line',{x1:px,y1:py+H,x2:cx,y2:cy},MK);
+ ed('r0',226,Y[0],L1[0],Y[1]);ed('r1',226,Y[0],L1[1],Y[1]);for(let i=0;i<4;i++)ed('l'+i,L1[i>>1],Y[1],LX[i],Y[2]);
+ const nd=(k,x,y,a,v,c)=>{const g=mk('g',{class:'mn '+c,transform:`translate(${x-W/2} ${y})`},MK);mk('rect',{width:W,height:H,rx:8},g);
+  mk('text',{x:W/2,y:18,class:'l'},g).textContent=a;mk('text',{x:W/2,y:36,class:'v'},g).textContent=v;return N2[k]=g};
+ nd('R',226,Y[0],'Radice di Merkle',m.root,'dim');
+ m.l1.forEach((v,j)=>nd('p'+j,L1[j],Y[1],'Hash',v,'dim'));
+ m.leaves.forEach((v,i)=>{const real=i<b.ids.length;nd('f'+i,LX[i],Y[2],real?'tx '+b.ids[i]:'copia tx '+b.ids[b.ids.length-1],v,(i===ix?'me':'dim')+(real?'':' dup'))});
+ const hd=mk('g',{class:'mn dim',transform:'translate(106 4)'},MK);mk('rect',{width:240,height:40,rx:8},hd);
+ mk('text',{x:120,y:16,class:'l'},hd).textContent='Intestazione del blocco #'+b.i;mk('text',{x:120,y:33,class:'v'},hd).textContent='radice '+b.root;
+ const cp=mk('text',{x:226,y:68,class:'cp'},MK);
+ [['me','la tua tx',10],['sib','ricevuto dal full node',110],['cmp','calcolato dal wallet',290]].forEach(([c,t,x])=>{
+  mk('rect',{x,y:301,width:14,height:14,rx:3,class:'lg '+c},MK);mk('text',{x:x+20,y:312,class:'lt2'},MK).textContent=t});
+ return{N2,E2,hd,cp}}
+async function prove(b,ix){const{N2,E2,hd,cp}=drawTree(b,ix),s=ix^1,p=ix>>1,q=p^1,
+  on=(k,c)=>{const l=N2[k].classList;l.remove('dim','cmp');l.add(c)},hl=(...k)=>k.forEach(x=>E2[x].classList.add('hl'));
+ setTree(true);await sl(700);
+ say('Il full node manda solo 2 hash, non il blocco');
+ on('f'+s,'sib');hl('l'+ix,'l'+s);await sl(900);
+ on('p'+p,'cmp');hl('r'+p);say('Il wallet risale: tx + fratello → radice');await sl(900);
+ on('p'+q,'sib');hl('r'+q);await sl(900);
+ on('R','cmp');await sl(900);
+ hd.classList.remove('dim');cp.textContent='=?';await sl(900);
+ cp.textContent='✓';on('R','ok');say('✓ La radice coincide con l\'intestazione','g')}
 const STEPS=[
 {t:'Chi c\'è nella rete?',d:'Ogni quadrato blu è un full node: scarica, valida e conserva tutta la timechain. Il tuo wallet è un nodo SPV (tratteggiato): porta con sé solo le intestazioni dei blocchi.',b:'Accendi i nodi',
  f:async()=>{for(const k of Object.keys(N)){pulse(k,'hit');await sl(250)}say('5 full node + 1 miner: verificano tutto da soli','g');say('SPV: si fida delle prove, non scarica i blocchi');say('Ogni full node valida, propaga e archivia la timechain')}},
@@ -70,8 +97,7 @@ const STEPS=[
  f:async()=>{let b=S.chain.find(x=>x.me);if(!b){addTx(true,5,true);b=await mineBlock(false);b.me=true;renderChain()}
   const id=S.tx.find(t=>t.mine&&t.blk===b.i).id;
   say('SPV: «Il blocco #'+b.i+' contiene '+id+'?»');await fly('W','F1','blk');await fly('F1','W','blk');
-  const c=[['hash tx '+h(id).slice(-6),''],['+ fratello '+h(id+'x').slice(-6),''],['+ fratello '+h(id+'y').slice(-6),''],['= radice '+b.root,''],['✓ coincide con l\'intestazione','g']];
-  for(const [x,k] of c){await sl(550);say(x,k)}await sl(550);say('Ti fidi di un solo nodo: con il tuo full node verificheresti da solo','r');document.getElementById('b'+b.i).scrollIntoView({inline:'center',block:'nearest'})}},
+  await prove(b,b.ids.indexOf(id));await sl(900);say('Ti fidi di un solo nodo: con il tuo full node verificheresti da solo','r');document.getElementById('b'+b.i).scrollIntoView({inline:'center',block:'nearest'})}},
 {t:'Provare a barare',d:'Gli stessi fondi spesi due volte: ogni full node controlla da solo e rifiuta la seconda. Nessuno si fida di nessuno.',b:'Spendi due volte',
  f:async()=>{const t=addTx(true,0.3,false);say('1ª tx: 1 ₿ → Alice');await gossip('W',t.id,'tx');say('✓ Accettata','g');await sl(500);
   say('2ª tx: gli stessi fondi → Bob','');await gossip('W','dbl','bad');say('✕ Rifiutata da tutti: l\'input è già speso','r')}},
@@ -93,9 +119,9 @@ $('steps').innerHTML=STEPS.map((_,i)=>`<button class="sb" aria-label="${i+1}. ${
 // Scorrimento (solo layout a scorrimento: telefoni / schermi bassi)
 const FL=matchMedia('(max-width:640px),(max-height:640px)'),RM=matchMedia('(prefers-reduced-motion:reduce)'),bhv=()=>RM.matches?'auto':'smooth';
 function reveal(){if(!FL.matches)return;const id=[1,2].includes(S.step)?'bt':[3,4,7].includes(S.step)?'bc':null;if(id)$(id).scrollIntoView({behavior:bhv(),block:'nearest'})}
-async function act(){if(S.busy)return;S.busy=true;$('go').disabled=true;$('panel').innerHTML='';
+async function act(){if(S.busy)return;setTree(false);S.busy=true;$('go').disabled=true;$('panel').innerHTML='';
  try{await STEPS[S.step].f();reveal()}finally{S.busy=false;$('go').disabled=false}}
-async function go(i){if(S.busy)return;
+async function go(i){if(S.busy)return;setTree(false);
  if(i<0||i>=STEPS.length)return;
  if(scrollY>0)scrollTo({top:0,behavior:bhv()});
  const t=$('t'),d=$('d');t.classList.add('sw');d.style.opacity=0;await sl(250);
